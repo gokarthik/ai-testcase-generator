@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Test Case Generator</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: white;
+            font-size: 16px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        select {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: #1e293b;
+            color: white;
+            font-size: 15px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #loading {
+            margin-top: 20px;
+            color: #facc15;
+            display: none;
+        }
+
+        #output {
+            margin-top: 30px;
+            padding: 20px;
+            background: #111827;
+            border-radius: 10px;
+            border: 1px solid #374151;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>AI Test Case Generator</h1>
+
+        <p>
+            Generate QA test cases using a locally running AI model powered by Ollama + phi3.
+        </p>
+
+        <textarea
+            id="prompt"
+            placeholder="Example: Login page with email and password validation">
+        </textarea>
+
+        <br>
+
+        <select id="testType">
+            <option value="Functional">Functional Testing</option>
+            <option value="Regression">Regression Testing</option>
+            <option value="API">API Testing</option>
+            <option value="Security">Security Testing</option>
+        </select>
+
+        <br>
+
+        <button onclick="generateTestCases()">
+            Generate Test Cases
+        </button>
+
+        <div id="loading">
+            Generating AI response...
+        </div>
+
+        <div id="output"></div>
+
+    </div>
+
+    <script>
+
+        async function generateTestCases() {
+
+            const prompt = document.getElementById('prompt').value;
+            const testType = document.getElementById('testType').value;
+
+            const output = document.getElementById('output');
+            const loading = document.getElementById('loading');
+
+            output.innerText = '';
+            loading.style.display = 'block';
+
+            try {
+
+                const response = await fetch('http://localhost:3000/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: `${testType} test cases for ${prompt}`
+                    })
+                });
+
+                const data = await response.json();
+
+                output.innerText = data.result;
+
+            } catch (error) {
+
+                output.innerText = 'Error generating response';
+
+                console.error(error);
+
+            } finally {
+
+                loading.style.display = 'none';
+            }
+        }
+
+    </script>
+
+</body>
+</html>
