@@ -16,9 +16,9 @@
         }
 
         .container {
-            max-width: 900px;
-            margin: 50px auto;
-            padding: 30px;
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 20px;
         }
 
         h1 {
@@ -26,16 +26,17 @@
             margin-bottom: 10px;
         }
 
-        p {
+        .subtitle {
             color: #94a3b8;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            line-height: 1.6;
         }
 
         textarea {
             width: 100%;
-            height: 180px;
-            padding: 15px;
-            border-radius: 10px;
+            height: 170px;
+            padding: 16px;
+            border-radius: 12px;
             border: 1px solid #334155;
             background: #1e293b;
             color: white;
@@ -45,29 +46,45 @@
         }
 
         select {
-            margin-top: 15px;
+            margin-top: 20px;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             border: none;
             background: #1e293b;
             color: white;
             font-size: 15px;
         }
 
-        button {
+        .preset-buttons {
             margin-top: 20px;
-            padding: 14px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            padding: 13px 20px;
             border: none;
             border-radius: 10px;
             background: #2563eb;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
-            transition: 0.2s;
         }
 
         button:hover {
-            background: #1d4ed8;
+            opacity: 0.9;
+        }
+
+        .preset-buttons button {
+            background: #334155;
+        }
+
+        .actions {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         #loading {
@@ -76,99 +93,350 @@
             display: none;
         }
 
-        #output {
+        #timing {
+            margin-top: 10px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .output-container {
             margin-top: 30px;
-            padding: 20px;
             background: #111827;
-            border-radius: 10px;
             border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 300px;
+        }
+
+        #output {
             white-space: pre-wrap;
-            line-height: 1.6;
+            line-height: 1.8;
             color: #e2e8f0;
+            font-size: 15px;
+        }
+
+        .history {
+            margin-top: 40px;
+        }
+
+        .history-item {
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            background: #334155;
         }
 
     </style>
 </head>
 <body>
 
-    <div class="container">
+<div class="container">
 
-        <h1>AI Test Case Generator</h1>
+    <h1>AI Test Case Generator</h1>
 
-        <p>
-            Generate QA test cases using a locally running AI model powered by Ollama + phi3.
-        </p>
+    <div class="subtitle">
+        AI-powered QA testcase generation using Ollama running locally.
+    </div>
 
-        <textarea
-            id="prompt"
-            placeholder="Example: Login page with email and password validation">
-        </textarea>
+    <textarea
+        id="prompt"
+        placeholder="Example: Generate payment gateway validation test cases">
+    </textarea>
 
-        <br>
+    <br>
 
-        <select id="testType">
-            <option value="Functional">Functional Testing</option>
-            <option value="Regression">Regression Testing</option>
-            <option value="API">API Testing</option>
-            <option value="Security">Security Testing</option>
-        </select>
+    <select id="model">
 
-        <br>
+        <option value="phi3">
+            phi3
+        </option>
 
-        <button onclick="generateTestCases()">
-            Generate Test Cases
+        <option value="llama3">
+            llama3
+        </option>
+
+        <option value="mistral">
+            mistral
+        </option>
+
+    </select>
+
+    <div class="preset-buttons">
+
+        <button onclick="setPrompt('Generate login page test cases')">
+            Login
         </button>
 
-        <div id="loading">
-            Generating AI response...
-        </div>
+        <button onclick="setPrompt('Generate payment gateway test cases')">
+            Payments
+        </button>
 
-        <div id="output"></div>
+        <button onclick="setPrompt('Generate API validation test cases')">
+            API
+        </button>
+
+        <button onclick="setPrompt('Generate security testing scenarios')">
+            Security
+        </button>
+
+        <button onclick="setPrompt('Generate regression test cases for ecommerce checkout')">
+            Regression
+        </button>
 
     </div>
 
-    <script>
+    <div class="actions">
 
-        async function generateTestCases() {
+        <button onclick="generateTestCases()">
+            Generate
+        </button>
 
-            const prompt = document.getElementById('prompt').value;
-            const testType = document.getElementById('testType').value;
+        <button onclick="copyOutput()">
+            Copy
+        </button>
 
-            const output = document.getElementById('output');
-            const loading = document.getElementById('loading');
+        <button onclick="clearOutput()">
+            Clear
+        </button>
 
-            output.innerText = '';
-            loading.style.display = 'block';
+        <button onclick="downloadTxt()">
+            Export TXT
+        </button>
 
-            try {
+    </div>
 
-                const response = await fetch('http://localhost:3000/generate', {
+    <div id="loading">
+        AI is generating response...
+    </div>
+
+    <div id="timing"></div>
+
+    <div class="output-container">
+
+        <div id="output">
+Generated test cases will appear here...
+        </div>
+
+    </div>
+
+    <div class="history">
+
+        <h3>Prompt History</h3>
+
+        <div id="historyList"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const historyKey = 'qa_prompt_history';
+
+    loadHistory();
+
+    function setPrompt(text) {
+
+        document.getElementById('prompt').value =
+            text;
+    }
+
+    async function generateTestCases() {
+
+        const prompt =
+            document.getElementById('prompt').value;
+
+        const model =
+            document.getElementById('model').value;
+
+        const output =
+            document.getElementById('output');
+
+        const loading =
+            document.getElementById('loading');
+
+        const timing =
+            document.getElementById('timing');
+
+        output.innerText = '';
+
+        timing.innerText = '';
+
+        loading.style.display = 'block';
+
+        addToHistory(prompt);
+
+        const startTime = performance.now();
+
+        try {
+
+            const response = await fetch(
+                'http://localhost:3000/generate',
+                {
                     method: 'POST',
+
                     headers: {
                         'Content-Type': 'application/json'
                     },
+
                     body: JSON.stringify({
-                        prompt: `${testType} test cases for ${prompt}`
+                        prompt: prompt,
+                        model: model
                     })
-                });
+                }
+            );
 
-                const data = await response.json();
+            const reader =
+                response.body.getReader();
 
-                output.innerText = data.result;
+            const decoder =
+                new TextDecoder();
 
-            } catch (error) {
+            while (true) {
 
-                output.innerText = 'Error generating response';
+                const { done, value } =
+                    await reader.read();
 
-                console.error(error);
+                if (done) {
 
-            } finally {
+                    break;
+                }
 
-                loading.style.display = 'none';
+                const chunk =
+                    decoder.decode(value);
+
+                output.innerText += chunk;
+
+                output.scrollTop =
+                    output.scrollHeight;
             }
-        }
 
-    </script>
+            const endTime = performance.now();
+
+            const seconds =
+                ((endTime - startTime) / 1000)
+                .toFixed(2);
+
+            timing.innerText =
+                `Generated in ${seconds} seconds`;
+
+        } catch (error) {
+
+            output.innerText =
+                'Error generating response';
+
+            console.error(error);
+
+        } finally {
+
+            loading.style.display = 'none';
+        }
+    }
+
+    function copyOutput() {
+
+        navigator.clipboard.writeText(
+            document.getElementById('output').innerText
+        );
+
+        alert('Copied to clipboard');
+    }
+
+    function clearOutput() {
+
+        document.getElementById('prompt').value = '';
+
+        document.getElementById('output').innerText =
+            'Generated test cases will appear here...';
+
+        document.getElementById('timing').innerText = '';
+    }
+
+    function downloadTxt() {
+
+        const text =
+            document.getElementById('output').innerText;
+
+        const blob =
+            new Blob([text], { type: 'text/plain' });
+
+        const a =
+            document.createElement('a');
+
+        a.href =
+            URL.createObjectURL(blob);
+
+        a.download =
+            'testcases.txt';
+
+        a.click();
+    }
+
+    function addToHistory(prompt) {
+
+        if (!prompt.trim()) return;
+
+        let history =
+            JSON.parse(
+                localStorage.getItem(historyKey)
+            ) || [];
+
+        history.unshift(prompt);
+
+        history = history.slice(0, 5);
+
+        localStorage.setItem(
+            historyKey,
+            JSON.stringify(history)
+        );
+
+        renderHistory();
+    }
+
+    function loadHistory() {
+
+        renderHistory();
+    }
+
+    function renderHistory() {
+
+        const historyList =
+            document.getElementById('historyList');
+
+        historyList.innerHTML = '';
+
+        const history =
+            JSON.parse(
+                localStorage.getItem(historyKey)
+            ) || [];
+
+        history.forEach(item => {
+
+            const div =
+                document.createElement('div');
+
+            div.className =
+                'history-item';
+
+            div.innerText = item;
+
+            div.onclick = () => {
+
+                document.getElementById('prompt').value =
+                    item;
+            };
+
+            historyList.appendChild(div);
+        });
+    }
+
+</script>
 
 </body>
 </html>
